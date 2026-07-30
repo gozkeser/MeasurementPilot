@@ -1,0 +1,9 @@
+/* Corporate Theme */
+body[data-theme="corporate"] {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-tertiary: #334155;
+  --bg-glass: rgba(30, 41, 59, 0.85);
+  --text-primary: #f8fafc;
+  --accent-cyan: #0284c7;
+}

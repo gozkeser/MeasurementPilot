@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MeasurementPilot — PCB Inspection & Flight Record System</title>
+    <link rel="stylesheet" href="css/variables.css">
+    <link rel="stylesheet" href="css/reset.css">
+    <link rel="stylesheet" href="css/layout.css">
+    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="css/themes/dark.css">
+    <link rel="stylesheet" href="css/themes/light.css">
+    <link rel="stylesheet" href="css/themes/corporate.css">
+</head>
+<body>
+    <div id="app-root">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="brand-section">
+                <div class="brand-logo">MP</div>
+                <div class="brand-title">MeasurementPilot</div>
+            </div>
+
+            <nav class="mode-tabs">
+                <button class="tab-btn active" data-mode="highlight" data-i18n="mode_highlight">Highlight</button>
+                <button class="tab-btn" data-mode="ctp" data-i18n="mode_ctp">CTP Definition</button>
+                <button class="tab-btn" data-mode="plan" data-i18n="mode_plan">Planning</button>
+                <button class="tab-btn" data-mode="measure" data-i18n="mode_measure">Measure</button>
+                <button class="tab-btn" data-mode="report" data-i18n="mode_report">Report</button>
+            </nav>
+
+            <div class="header-actions">
+                <button id="btn-theme-toggle" class="btn btn-icon" title="Toggle Theme">🌓</button>
+                <button id="btn-lang-toggle" class="btn btn-secondary" style="padding: 4px 10px; font-size: 12px;">EN</button>
+                <button id="btn-settings" class="btn btn-icon" title="Settings">⚙️</button>
+            </div>
+        </header>
+
+        <!-- App Body -->
+        <main class="app-body">
+            <!-- Left Sidebar -->
+            <aside class="left-sidebar" id="left-sidebar">
+                <div class="panel-header"><span>Project & Elements</span></div>
+                <div class="panel-content">
+                    <div class="card" id="zip-load-card" style="margin-bottom: 12px;">
+                        <div style="font-size: 13px; font-weight: 600; margin-bottom: 8px; color: var(--text-primary);">ZIP Project File</div>
+                        <input type="file" id="zip-file-input" accept=".zip" style="display:none;" />
+                        <button type="button" id="btn-trigger-zip" class="btn btn-primary" onclick="document.getElementById('zip-file-input').click()" style="width: 100%; display: flex; align-items: center; justify-content: center; cursor: pointer; text-align: center; font-weight: 600;">
+                            📂 Load Project ZIP
+                        </button>
+                    </div>
+                    <div id="sidebar-dynamic-content"></div>
+                </div>
+            </aside>
+
+            <!-- Center Canvas Area -->
+            <section class="canvas-wrapper" id="canvas-container">
+                <div class="canvas-controls-overlay" style="position: absolute; top: 16px; right: 16px; display: flex; gap: 8px; z-index: 20;">
+                    <button id="btn-canvas-fit" class="btn btn-secondary" style="background: var(--bg-glass); backdrop-filter: var(--blur-glass);" title="Fit View to Screen">🎯 Fit Image</button>
+                    <button id="btn-canvas-fullscreen" class="btn btn-secondary" style="background: var(--bg-glass); backdrop-filter: var(--blur-glass);" title="Toggle Fullscreen Mode">⛶ Fullscreen</button>
+                </div>
+                <canvas id="main-canvas"></canvas>
+                <canvas id="minimap-canvas" style="position: absolute; bottom: 16px; right: 16px; width: 220px; height: 140px; border-radius: var(--radius-md); border: 1px solid var(--border-color); box-shadow: var(--shadow-glass); pointer-events: auto;"></canvas>
+            </section>
+
+            <!-- Right Panel -->
+            <aside class="right-panel" id="right-panel">
+                <!-- Rendered dynamically by active mode panel -->
+            </aside>
+        </main>
+
+        <!-- Status Bar -->
+        <footer class="status-bar">
+            <div class="status-left">
+                <div class="status-item">
+                    <span style="color: var(--text-muted);">Project:</span>
+                    <strong id="status-project">No Project Loaded</strong>
+                </div>
+                <div class="status-item">
+                    <span style="color: var(--text-muted);">Layer:</span>
+                    <span id="status-layer" class="badge badge-tpr">TOP</span>
+                </div>
+            </div>
+            <div class="status-right">
+                <div class="status-item">
+                    <span style="color: var(--text-muted);">Zoom:</span>
+                    <span id="status-zoom">100%</span>
+                </div>
+                <div class="status-item">
+                    <span style="color: var(--text-muted);">Coord:</span>
+                    <span id="status-coords">X: 0.00 mm | Y: 0.00 mm</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Modals & Toasts -->
+    <div id="modal-container"></div>
+    <div id="toast-container"></div>
+
+    <script>
+      // Standalone zip loader — runs before and independently of app.js module
+      function _zipLoaderReady() {
+        var fileInput = document.getElementById('zip-file-input');
+        if (!fileInput || fileInput.dataset.loaderBound) return;
+        fileInput.dataset.loaderBound = 'true';
+        fileInput.addEventListener('change', function(e) {
+          var file = e.target.files && e.target.files[0];
+          if (!file) return;
+          var toast = document.createElement('div');
+          toast.className = 'toast toast-info';
+          toast.textContent = '📂 Uploading ' + file.name + '...';
+          var tc = document.getElementById('toast-container');
+          if (tc) tc.appendChild(toast);
+          setTimeout(function() { if (toast.parentNode) toast.parentNode.removeChild(toast); }, 3000);
+
+          var formData = new FormData();
+          formData.append('file', file);
+          fileInput.value = '';
+
+          fetch('/api/v1/project/load', { method: 'POST', body: formData })
+            .then(function(r) {
+              if (!r.ok) return r.json().then(function(e) { throw e; });
+              return r.json();
+            })
+            .then(function(info) {
+              // DIAGNOSTIC: confirm fetch succeeded and info is valid
+              console.log('[ZIP-LOADER] fetch 200 OK, info:', JSON.stringify(info).slice(0, 200));
+              var dbg = document.createElement('div');
+              dbg.className = 'toast toast-success';
+              dbg.textContent = '🔍 DEBUG: Loaded ' + (info && info.assembly_no) + ' — dispatching event...';
+              var tc3 = document.getElementById('toast-container');
+              if (tc3) tc3.appendChild(dbg);
+              setTimeout(function() { if (dbg.parentNode) dbg.parentNode.removeChild(dbg); }, 6000);
+
+              window._pendingProjectInfo = info;
+              document.dispatchEvent(new CustomEvent('project-loaded', { detail: info }));
+              console.log('[ZIP-LOADER] CustomEvent dispatched');
+            })
+            .catch(function(err) {
+              var msg = (err && (err.message || err.detail)) || 'Failed to load ZIP';
+              var t = document.createElement('div');
+              t.className = 'toast toast-error';
+              t.textContent = '❌ ' + msg;
+              var tc2 = document.getElementById('toast-container');
+              if (tc2) tc2.appendChild(t);
+              setTimeout(function() { if (t.parentNode) t.parentNode.removeChild(t); }, 6000);
+            });
+        });
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', _zipLoaderReady);
+      } else {
+        _zipLoaderReady();
+      }
+    </script>
+    <script type="module" src="js/app.js?v=2"></script>
+
+</body>
+</html>

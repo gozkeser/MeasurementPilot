@@ -1,0 +1,6 @@
+/* Dark Theme (Default) */
+body[data-theme="dark"] {
+  --bg-primary: #0b0d14;
+  --bg-secondary: #131722;
+  --bg-tertiary: #1c2234;
+}
