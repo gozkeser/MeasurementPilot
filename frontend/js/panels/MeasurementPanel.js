@@ -175,34 +175,43 @@ export class MeasurementPanel {
       // Negatif Probe + Global Highlight
       if (negX !== undefined && negX !== null) {
         const sNeg = engine.canvasToScreen(negX, negY);
-        drawGlobalHighlight(ctx, sNeg.sx, sNeg.sy, highlightConfig, timestamp);
+        drawGlobalHighlight(ctx, sNeg.sx, sNeg.sy, highlightConfig, timestamp, engine);
         drawProbeAssembly(ctx, sNeg.sx, sNeg.sy, 'negative', probeConfig, ctx.canvas.width, opacity);
       }
       // Pozitif Probe + Global Highlight
       if (posX !== undefined && posX !== null) {
         const sPos = engine.canvasToScreen(posX, posY);
-        drawGlobalHighlight(ctx, sPos.sx, sPos.sy, highlightConfig, timestamp);
+        drawGlobalHighlight(ctx, sPos.sx, sPos.sy, highlightConfig, timestamp, engine);
         drawProbeAssembly(ctx, sPos.sx, sPos.sy, 'positive', probeConfig, ctx.canvas.width, opacity);
       }
     });
 
     // Her iki probu gösterecek zoom
-    if (posX !== undefined && negX !== undefined) {
+    if (posX !== undefined || negX !== undefined) {
       const validPoints = [[posX, posY], [negX, negY]].filter(([x]) => x != null && !isNaN(x));
       if (validPoints.length > 0) {
         const xs = validPoints.map(p => p[0]);
         const ys = validPoints.map(p => p[1]);
         const midX = (Math.min(...xs) + Math.max(...xs)) / 2;
         const midY = (Math.min(...ys) + Math.max(...ys)) / 2;
-        const dx = Math.max(...xs) - Math.min(...xs) || 100;
-        const dy = Math.max(...ys) - Math.min(...ys) || 100;
-        const margin = 2.5;
-        const fitZoom = Math.min(
-          this.engine.canvas.width  / (dx * margin),
-          this.engine.canvas.height / (dy * margin),
-          state.settings?.flyto?.target_zoom || 2.5
-        );
-        this.engine.flyTo(midX, midY, Math.max(fitZoom, 0.5), state.settings?.flyto?.duration_ms || 800);
+        const dx = Math.max(...xs) - Math.min(...xs);
+        const dy = Math.max(...ys) - Math.min(...ys);
+
+        const paddingX = 140;
+        const paddingY = 120;
+        const availW = Math.max(100, this.engine.canvas.width - 2 * paddingX);
+        const availH = Math.max(100, this.engine.canvas.height - 2 * paddingY);
+
+        let fitZoom = state.settings?.flyto?.target_zoom || 2.5;
+
+        if (dx > 0 || dy > 0) {
+          const zoomX = dx > 0 ? availW / dx : Infinity;
+          const zoomY = dy > 0 ? availH / dy : Infinity;
+          fitZoom = Math.min(zoomX, zoomY, fitZoom);
+        }
+
+        const minZoom = 0.1;
+        this.engine.flyTo(midX, midY, Math.max(fitZoom, minZoom), state.settings?.flyto?.duration_ms || 800);
       }
     }
   }

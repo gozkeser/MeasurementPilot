@@ -8,6 +8,8 @@ export class CanvasEngine {
     this.viewportX = 0; // pan offset X in canvas space
     this.viewportY = 0; // pan offset Y in canvas space
     this.scale = 1.0;
+    this.fitScale = 1.0;
+    this.customCursor = null;
 
     this.img = null;
     this.offscreenCanvas = null;
@@ -24,6 +26,11 @@ export class CanvasEngine {
 
     this.bindEvents();
     this.startLoop();
+  }
+
+  setCustomCursor(cursorStyle) {
+    this.customCursor = cursorStyle;
+    this.canvas.style.cursor = cursorStyle || 'default';
   }
 
   initImage(imgUrl, onLoaded) {
@@ -57,6 +64,7 @@ export class CanvasEngine {
     const scaleX = this.canvas.width / this.img.width;
     const scaleY = this.canvas.height / this.img.height;
     this.scale = Math.min(scaleX, scaleY) * 0.95;
+    this.fitScale = this.scale;
 
     this.viewportX = (this.canvas.width - this.img.width * this.scale) / 2;
     this.viewportY = (this.canvas.height - this.img.height * this.scale) / 2;
@@ -111,7 +119,7 @@ export class CanvasEngine {
     window.addEventListener('pointerup', () => {
       if (this.isDragging) {
         this.isDragging = false;
-        this.canvas.style.cursor = 'default';
+        this.canvas.style.cursor = this.customCursor || 'default';
       }
     });
 

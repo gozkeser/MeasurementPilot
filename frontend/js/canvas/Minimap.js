@@ -17,15 +17,9 @@ export class Minimap {
       const clickY = e.clientY - rect.top;
 
       // Map click to unscaled image pixel coords
-      const scaleX = this.canvas.width / this.engine.img.width;
-      const scaleY = this.canvas.height / this.engine.img.height;
-      const miniScale = Math.min(scaleX, scaleY);
-
-      const imgOffsetX = (this.canvas.width - this.engine.img.width * miniScale) / 2;
-      const imgOffsetY = (this.canvas.height - this.engine.img.height * miniScale) / 2;
-
-      const cx = (clickX - imgOffsetX) / miniScale;
-      const cy = (clickY - imgOffsetY) / miniScale;
+      const miniScale = this.canvas.width / this.engine.img.width;
+      const cx = clickX / miniScale;
+      const cy = clickY / miniScale;
 
       this.engine.flyTo(cx, cy, this.engine.scale, 500);
     });
@@ -48,6 +42,8 @@ export class Minimap {
     if (this.canvas.width !== newW || this.canvas.height !== newH) {
       this.canvas.width  = newW;
       this.canvas.height = newH;
+      this.canvas.style.width  = `${newW}px`;
+      this.canvas.style.height = `${newH}px`;
     }
   }
 
@@ -60,18 +56,13 @@ export class Minimap {
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
       if (this.engine.offscreenCanvas && this.engine.img) {
-        const scaleX = this.canvas.width / this.engine.img.width;
-        const scaleY = this.canvas.height / this.engine.img.height;
-        const miniScale = Math.min(scaleX, scaleY);
-
-        const imgOffsetX = (this.canvas.width - this.engine.img.width * miniScale) / 2;
-        const imgOffsetY = (this.canvas.height - this.engine.img.height * miniScale) / 2;
+        const miniScale = this.canvas.width / this.engine.img.width;
 
         this.ctx.drawImage(
           this.engine.offscreenCanvas,
-          imgOffsetX, imgOffsetY,
-          this.engine.img.width * miniScale,
-          this.engine.img.height * miniScale
+          0, 0,
+          this.canvas.width,
+          this.canvas.height
         );
 
         // Draw Viewport Rect — direct transform without getBoundingClientRect (more accurate)
@@ -80,8 +71,8 @@ export class Minimap {
         const cEndCx   = (this.engine.canvas.width   - this.engine.viewportX) / this.engine.scale;
         const cEndCy   = (this.engine.canvas.height  - this.engine.viewportY) / this.engine.scale;
 
-        const rx = imgOffsetX + cStartCx * miniScale;
-        const ry = imgOffsetY + cStartCy * miniScale;
+        const rx = cStartCx * miniScale;
+        const ry = cStartCy * miniScale;
         const rw = (cEndCx - cStartCx) * miniScale;
         const rh = (cEndCy - cStartCy) * miniScale;
 

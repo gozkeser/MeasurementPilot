@@ -13,6 +13,11 @@ export class CTPPanel {
     subscribe((state) => {
       if (state.mode === 'ctp') {
         this.render(state);
+      } else {
+        if (this.placementMode) {
+          this.placementMode = false;
+          this.engine.setCustomCursor(null);
+        }
       }
     });
 
@@ -88,6 +93,7 @@ export class CTPPanel {
                 showToast('CTP created successfully', 'success');
               }
               this.placementMode = false;
+              this.engine.setCustomCursor(null);
               this.refreshCTPs();
             } catch (err) {
               showToast(err.message || 'Failed to save CTP', 'error');
@@ -125,7 +131,10 @@ export class CTPPanel {
     btnAdd.addEventListener('click', () => {
       this.placementMode = !this.placementMode;
       if (this.placementMode) {
+        this.engine.setCustomCursor('crosshair');
         showToast('Click anywhere on the PCB canvas to place a CTP', 'info');
+      } else {
+        this.engine.setCustomCursor(null);
       }
       this.render(getState());
     });

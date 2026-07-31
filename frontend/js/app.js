@@ -9,9 +9,7 @@ import { CTPPanel } from './panels/CTPPanel.js';
 import { PlanningPanel } from './panels/PlanningPanel.js';
 import { MeasurementPanel } from './panels/MeasurementPanel.js';
 import { ReportPanel } from './panels/ReportPanel.js';
-import { drawReticle } from './canvas/markers/Reticle.js';
-import { drawCrosshair } from './canvas/markers/Crosshair.js';
-import { drawPing } from './canvas/markers/Ping.js';
+import { drawGlobalHighlight } from './canvas/markers/GlobalHighlight.js';
 import { drawBadgeMarker } from './canvas/markers/BadgeMarker.js';
 import { showToast } from './components/Toast.js';
 import { showModal } from './components/Modal.js';
@@ -69,20 +67,9 @@ class App {
         api.transform.mmToPx(state.activeLayer, sel.x, sel.y).then(px => {
           this.engine.registerOverlay('selected-element', (ctx, engine, timestamp) => {
             const screen = engine.canvasToScreen(px.x_px, px.y_px);
-            const hl    = state.settings.highlight || {};
-            const color = hl.color || '#00d4ff';
-            const size  = hl.size  || 32;
-            const line_width = hl.line_width || 2;
-            const anim  = hl.animation || 'reticle';
-
-            if (anim === 'reticle') {
-              drawReticle(ctx, screen.sx, screen.sy, { color, size, line_width }, timestamp);
-            } else if (anim === 'ping') {
-              drawPing(ctx, screen.sx, screen.sy, { color, size, line_width }, timestamp);
-            } else if (anim === 'crosshair') {
-              drawCrosshair(ctx, screen.sx, screen.sy, { color, size, line_width });
-            }
-            drawBadgeMarker(ctx, screen.sx, screen.sy, sel.label, { color });
+            const hl = state.settings.highlight || {};
+            drawGlobalHighlight(ctx, screen.sx, screen.sy, hl, timestamp, engine);
+            drawBadgeMarker(ctx, screen.sx, screen.sy, sel.label, { color: hl.color || '#00d4ff' });
           });
         }).catch(() => {});
       }
@@ -211,6 +198,7 @@ class App {
     let hlColorVal  = settings.highlight?.color || '#00d4ff';
     let hlSizeVal   = settings.highlight?.size || 32;
     let hlLineWVal  = settings.highlight?.line_width || 2;
+    let hlZoomScaleRatioVal = settings.highlight?.zoom_scale_ratio !== undefined ? settings.highlight.zoom_scale_ratio : 1.0;
 
     form.appendChild(Dropdown({
       label: 'UI Theme',
@@ -307,12 +295,27 @@ class App {
 
     form.appendChild(hlRow);
 
-    form.appendChild(TextInput({
+    const hlRow2 = document.createElement('div');
+    hlRow2.style.display = 'grid';
+    hlRow2.style.gridTemplateColumns = '1fr 1fr';
+    hlRow2.style.gap = '10px';
+
+    hlRow2.appendChild(TextInput({
       label: 'Line Width (px)',
       value: hlLineWVal,
       type: 'number',
       onChange: (v) => hlLineWVal = parseInt(v) || 2
     }));
+
+    hlRow2.appendChild(TextInput({
+      label: 'Zoom Scale Ratio (0..2)',
+      value: hlZoomScaleRatioVal,
+      type: 'number',
+      step: '0.1',
+      onChange: (v) => hlZoomScaleRatioVal = parseFloat(v) ?? 1.0
+    }));
+
+    form.appendChild(hlRow2);
 
     showModal({
       title: '⚙️ Application & Canvas Settings',
@@ -327,7 +330,7 @@ class App {
               theme: themeVal,
               flyto: { duration_ms: flyDurationVal, target_zoom: flyZoomVal },
               probe: { positive_color: posColorVal, negative_color: negColorVal, probe_angle: probeAngleVal },
-              highlight: { animation: hlAnimVal, color: hlColorVal, size: hlSizeVal, line_width: hlLineWVal }
+              highlight: { animation: hlAnimVal, color: hlColorVal, size: hlSizeVal, line_width: hlLineWVal, zoom_scale_ratio: hlZoomScaleRatioVal }
             };
 
             try {

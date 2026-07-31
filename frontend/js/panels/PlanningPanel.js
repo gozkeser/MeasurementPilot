@@ -231,16 +231,26 @@ export class PlanningPanel {
     const ys = validPoints.map(p => p[1]);
     const midX = (Math.min(...xs) + Math.max(...xs)) / 2;
     const midY = (Math.min(...ys) + Math.max(...ys)) / 2;
-    const dx = Math.max(...xs) - Math.min(...xs) || 100;
-    const dy = Math.max(...ys) - Math.min(...ys) || 100;
-    const margin = 2.5;
-    const fitZoom = Math.min(
-      this.engine.canvas.width  / (dx * margin),
-      this.engine.canvas.height / (dy * margin),
-      state.settings?.flyto?.target_zoom || 2.5
-    );
+    const dx = Math.max(...xs) - Math.min(...xs);
+    const dy = Math.max(...ys) - Math.min(...ys);
 
-    this.engine.flyTo(midX, midY, Math.max(fitZoom, 0.5), state.settings?.flyto?.duration_ms || 800);
+    // Padding in screen pixels for probe handles and UI margins
+    const paddingX = 140;
+    const paddingY = 120;
+
+    const availW = Math.max(100, this.engine.canvas.width - 2 * paddingX);
+    const availH = Math.max(100, this.engine.canvas.height - 2 * paddingY);
+
+    let fitZoom = state.settings?.flyto?.target_zoom || 2.5;
+
+    if (dx > 0 || dy > 0) {
+      const zoomX = dx > 0 ? availW / dx : Infinity;
+      const zoomY = dy > 0 ? availH / dy : Infinity;
+      fitZoom = Math.min(zoomX, zoomY, fitZoom);
+    }
+
+    const minZoom = 0.1;
+    this.engine.flyTo(midX, midY, Math.max(fitZoom, minZoom), state.settings?.flyto?.duration_ms || 800);
   }
 
   async showProbesOnCanvas(tc, state) {
@@ -302,12 +312,12 @@ export class PlanningPanel {
 
       if (posX != null) {
         const s = engine.canvasToScreen(posX, posY);
-        drawGlobalHighlight(ctx, s.sx, s.sy, highlightConfig, timestamp);
+        drawGlobalHighlight(ctx, s.sx, s.sy, highlightConfig, timestamp, engine);
         drawProbeAssembly(ctx, s.sx, s.sy, 'positive', probeConfig, ctx.canvas.width, opacity);
       }
       if (negX != null) {
         const s = engine.canvasToScreen(negX, negY);
-        drawGlobalHighlight(ctx, s.sx, s.sy, highlightConfig, timestamp);
+        drawGlobalHighlight(ctx, s.sx, s.sy, highlightConfig, timestamp, engine);
         drawProbeAssembly(ctx, s.sx, s.sy, 'negative', probeConfig, ctx.canvas.width, opacity);
       }
     });
