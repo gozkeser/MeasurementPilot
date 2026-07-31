@@ -17,7 +17,8 @@ class TCDService:
 
     def resolve_probe_point(self, ref: ProbePointRef, layer: Optional[str] = None) -> ResolvedProbePoint:
         state = project_service.get_state()
-        target_layer = layer or state.active_layer
+        target_layer = ref.layer or layer or state.active_layer
+
 
         source_upper = ref.source.upper()
         ref_id = ref.ref

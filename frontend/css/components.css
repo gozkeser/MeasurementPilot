@@ -135,6 +135,19 @@
 .badge-tpr { background: rgba(0, 212, 255, 0.15); color: var(--accent-cyan); }
 .badge-ctp { background: rgba(255, 159, 26, 0.15); color: var(--accent-orange); }
 .badge-ppl { background: rgba(139, 92, 246, 0.15); color: var(--accent-purple); }
+.badge-version {
+  background: rgba(0, 212, 255, 0.12);
+  color: var(--accent-cyan);
+  border: 1px solid rgba(0, 212, 255, 0.35);
+  font-size: 10px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: none;
+  align-self: center;
+  margin-left: 4px;
+}
 
 /* Modal */
 .modal-overlay {
@@ -157,8 +170,9 @@
 }
 
 .modal-box {
-  width: 480px;
-  max-width: 90vw;
+  width: 520px;
+  max-width: 92vw;
+  box-sizing: border-box;
   background: var(--bg-secondary);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
@@ -166,6 +180,12 @@
   padding: 24px;
   transform: scale(0.95);
   transition: transform 200ms ease;
+}
+
+.modal-box *,
+.modal-box *::before,
+.modal-box *::after {
+  box-sizing: border-box;
 }
 
 .modal-overlay.active .modal-box {

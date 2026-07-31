@@ -66,16 +66,18 @@ export class SidebarPanel {
     const state = getState();
     if (!state.project) return;
     try {
-      const [comps, tps, ctps] = await Promise.all([
+      const [comps, tps, ctps, tcd] = await Promise.all([
         api.components.list({ layer: state.activeLayer }),
         api.testpoints.list({ side: state.activeLayer }),
-        api.ctps.list()
+        api.ctps.list(),
+        api.tcd.getResolved(state.activeLayer).catch(() => null)
       ]);
-      setState({ loadedComponents: comps, loadedTPs: tps, loadedCTPs: ctps });
+      setState({ loadedComponents: comps, loadedTPs: tps, loadedCTPs: ctps, loadedTCD: tcd });
     } catch (e) {
       console.error('Error fetching elements:', e);
     }
   }
+
 
   render(state) {
     console.log('[SP] render called, state.project:', !!(state && state.project));
@@ -161,8 +163,11 @@ export class SidebarPanel {
     if (state.activeLayer === layer) return;
     try {
       await api.project.setActiveLayer(layer);
-      setState({ activeLayer: layer });
-      this.engine.initImage(api.project.image(layer));
+      this.engine.unregisterOverlay('selected-element');
+      setState({ activeLayer: layer, selectedElement: null });
+      this.engine.initImage(api.project.image(layer), () => {
+        this.engine.resetView();
+      });
       const layerEl = document.getElementById('status-layer');
       if (layerEl) layerEl.textContent = layer;
       this.fetchElements();
@@ -170,6 +175,7 @@ export class SidebarPanel {
       showToast(e.message || 'Failed to switch layer', 'error');
     }
   }
+
 
   renderElementList(container) {
     container.innerHTML = '';
@@ -180,7 +186,9 @@ export class SidebarPanel {
       (state.loadedTPs || []).forEach(tp => items.push({ type: 'TPR', id: tp.id, label: tp.id, sub: tp.net, x: tp.x_mm, y: tp.y_mm }));
     }
     if (this.activeFilter === 'ALL' || this.activeFilter === 'CTP') {
-      (state.loadedCTPs || []).forEach(ctp => items.push({ type: 'CTP', id: ctp.id, label: ctp.name, sub: ctp.net, x: ctp.x_mm, y: ctp.y_mm }));
+      (state.loadedCTPs || [])
+        .filter(ctp => !ctp.side || ctp.side.toUpperCase() === 'BOTH' || ctp.side.toUpperCase() === state.activeLayer)
+        .forEach(ctp => items.push({ type: 'CTP', id: ctp.id, label: ctp.name, sub: ctp.net, x: ctp.x_mm, y: ctp.y_mm }));
     }
     if (this.activeFilter === 'ALL' || this.activeFilter === 'PPL') {
       (state.loadedComponents || []).forEach(c => items.push({ type: c.type || 'PPL', id: c.designator, label: c.designator, sub: c.comment, x: c.x_mm, y: c.y_mm }));

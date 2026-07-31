@@ -6,6 +6,7 @@ export class HighlightPanel {
   constructor(containerEl, canvasEngine) {
     this.container = containerEl;
     this.engine = canvasEngine;
+    this._renderId = 0;
 
     subscribe((state) => {
       if (state.mode === 'highlight') {
@@ -15,6 +16,7 @@ export class HighlightPanel {
   }
 
   async render(state) {
+    const currentRenderId = ++this._renderId;
     this.container.innerHTML = '';
 
     const header = document.createElement('div');
@@ -41,6 +43,9 @@ export class HighlightPanel {
     try {
       pxCoords = await api.transform.mmToPx(state.activeLayer, sel.x, sel.y);
     } catch (e) {}
+
+    // Async render check to prevent duplicate card creation during fast clicks
+    if (currentRenderId !== this._renderId) return;
 
     const card = document.createElement('div');
     card.className = 'card';
@@ -101,3 +106,4 @@ export class HighlightPanel {
     this.container.appendChild(content);
   }
 }
+

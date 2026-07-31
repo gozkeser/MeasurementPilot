@@ -1,4 +1,4 @@
-export function drawPing(ctx, screenX, screenY, { color = '#ff9f1a', size = 30 } = {}, timestamp = 0) {
+export function drawPing(ctx, screenX, screenY, { color = '#ff9f1a', size = 30, line_width = 2, lineWidth = 2 } = {}, timestamp = 0) {
   ctx.save();
   ctx.strokeStyle = color;
 
@@ -6,7 +6,7 @@ export function drawPing(ctx, screenX, screenY, { color = '#ff9f1a', size = 30 }
   const radius = (size / 2) * cycle;
   const alpha = 1.0 - cycle;
 
-  ctx.lineWidth = 2;
+  ctx.lineWidth = line_width || lineWidth || 2;
   ctx.globalAlpha = alpha;
   ctx.shadowColor = color;
   ctx.shadowBlur = 8;

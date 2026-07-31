@@ -52,7 +52,7 @@ export class ReportPanel {
 
     const card = document.createElement('div');
     card.className = 'card';
-    card.innerHTML = `<h3 style="margin: 0 0 12px 0; font-size: 15px; color: var(--accent-cyan);">Flight Record Settings</h3>`;
+    card.innerHTML = `<h3 style="margin: 0 0 12px 0; font-size: 15px; color: var(--accent-cyan);">Test Record Settings</h3>`;
 
     card.appendChild(Dropdown({
       label: 'Select Measurement Session',
@@ -83,7 +83,7 @@ export class ReportPanel {
     btnGen.className = 'btn btn-primary';
     btnGen.style.width = '100%';
     btnGen.style.marginTop = '16px';
-    btnGen.innerHTML = '📄 Generate HTML Flight Report';
+    btnGen.innerHTML = '📄 Generate HTML Test Report';
 
     btnGen.addEventListener('click', async () => {
       if (!selectedSessionId) {
@@ -106,7 +106,7 @@ export class ReportPanel {
         resultCard.style.border = '1px solid var(--accent-green)';
         resultCard.style.marginTop = '16px';
         resultCard.innerHTML = `
-          <div style="color: var(--accent-green); font-weight: 600; margin-bottom: 8px;">✅ Flight Record Ready</div>
+          <div style="color: var(--accent-green); font-weight: 600; margin-bottom: 8px;">✅ Test Record Ready</div>
           <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 12px;">Filename: <code>${res.report_filename}</code></div>
           <div style="display: flex; flex-direction: column; gap: 8px;">
             <a href="${api.report.viewUrl(res.report_filename)}" target="_blank" class="btn btn-primary" style="text-decoration: none; text-align: center; font-size: 12px;">👁️ View HTML Report (New Tab)</a>

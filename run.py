@@ -9,10 +9,15 @@ if str(root_dir) not in sys.path:
 
 import argparse
 import uvicorn
+try:
+    import colorama
+    colorama.init(autoreset=True)
+except ImportError:
+    pass
 
 def main():
     parser = argparse.ArgumentParser(description="MeasurementPilot Server Launcher")
-    parser.add_argument("--host", default="0.0.0.0", help="Host address to bind (default: 0.0.0.0)")
+    parser.add_argument("--host", default="localhost", help="Host address to bind (default: localhost)")
     parser.add_argument("--port", type=int, default=8765, help="Port to listen on (default: 8765)")
     parser.add_argument("--reload", action="store_true", help="Enable auto-reload for development")
     args = parser.parse_args()
@@ -26,3 +31,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

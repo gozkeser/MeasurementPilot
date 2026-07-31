@@ -31,8 +31,32 @@ export class Minimap {
     });
   }
 
+  _updateCanvasSize() {
+    if (!this.engine.img) return;
+    const ar = this.engine.img.width / this.engine.img.height;
+    const maxW = 220;
+    const maxH = 140;
+    let newW, newH;
+    if (ar > maxW / maxH) {
+      newW = maxW;
+      newH = Math.round(maxW / ar);
+    } else {
+      newH = maxH;
+      newW = Math.round(maxH * ar);
+    }
+    // Only update if changed to avoid thrashing
+    if (this.canvas.width !== newW || this.canvas.height !== newH) {
+      this.canvas.width  = newW;
+      this.canvas.height = newH;
+    }
+  }
+
   startLoop() {
     const render = () => {
+      if (this.engine.img) {
+        this._updateCanvasSize();
+      }
+
       this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
       if (this.engine.offscreenCanvas && this.engine.img) {
@@ -50,17 +74,16 @@ export class Minimap {
           this.engine.img.height * miniScale
         );
 
-        // Draw Viewport Rect
-        const vpScreenStart = { x: 0, y: 0 };
-        const vpScreenEnd = { x: this.engine.canvas.width, y: this.engine.canvas.height };
+        // Draw Viewport Rect — direct transform without getBoundingClientRect (more accurate)
+        const cStartCx = (0                          - this.engine.viewportX) / this.engine.scale;
+        const cStartCy = (0                          - this.engine.viewportY) / this.engine.scale;
+        const cEndCx   = (this.engine.canvas.width   - this.engine.viewportX) / this.engine.scale;
+        const cEndCy   = (this.engine.canvas.height  - this.engine.viewportY) / this.engine.scale;
 
-        const cStart = this.engine.screenToCanvas(vpScreenStart.x, vpScreenStart.y);
-        const cEnd = this.engine.screenToCanvas(vpScreenEnd.x, vpScreenEnd.y);
-
-        const rx = imgOffsetX + cStart.cx * miniScale;
-        const ry = imgOffsetY + cStart.cy * miniScale;
-        const rw = (cEnd.cx - cStart.cx) * miniScale;
-        const rh = (cEnd.cy - cStart.cy) * miniScale;
+        const rx = imgOffsetX + cStartCx * miniScale;
+        const ry = imgOffsetY + cStartCy * miniScale;
+        const rw = (cEndCx - cStartCx) * miniScale;
+        const rh = (cEndCy - cStartCy) * miniScale;
 
         this.ctx.strokeStyle = '#00d4ff';
         this.ctx.lineWidth = 2;

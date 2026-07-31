@@ -82,11 +82,16 @@ export class CanvasEngine {
     window.addEventListener('resize', () => this.resize());
 
     this.canvas.addEventListener('pointerdown', (e) => {
-      if (e.button !== 0) return; // Left click only
+      const isCTPRightDrag = e.button === 2 && window._appMode === 'ctp';
+      if (e.button !== 0 && !isCTPRightDrag) return;
       this.isDragging = true;
       this.dragStart = { x: e.clientX, y: e.clientY };
       this.viewportStart = { x: this.viewportX, y: this.viewportY };
       this.canvas.style.cursor = 'grabbing';
+    });
+
+    this.canvas.addEventListener('contextmenu', (e) => {
+      if (window._appMode === 'ctp') e.preventDefault();
     });
 
     window.addEventListener('pointermove', (e) => {
@@ -106,7 +111,7 @@ export class CanvasEngine {
     window.addEventListener('pointerup', () => {
       if (this.isDragging) {
         this.isDragging = false;
-        this.canvas.style.cursor = 'crosshair';
+        this.canvas.style.cursor = 'default';
       }
     });
 

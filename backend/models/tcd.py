@@ -4,6 +4,7 @@ from typing import Optional, List
 class ProbePointRef(BaseModel):
     source: str  # "TPR" | "CTP" | "PPL"
     ref: str     # id or designator
+    layer: Optional[str] = "TOP"  # "TOP" | "BOT"
 
 class TestCase(BaseModel):
     id: str  # "TC-001"

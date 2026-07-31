@@ -1,16 +1,24 @@
-export function drawProbeAssembly(ctx, screenX, screenY, role = 'positive', config = {}) {
+export function drawProbeAssembly(ctx, screenX, screenY, role = 'positive', config = {}, canvasWidth = 800, opacity = 1.0) {
+  if (opacity <= 0.01) return;
   const isPos = role === 'positive';
-  const colorHex = isPos ? (config.positive_color || '#dc2626') : (config.negative_color || '#10b981');
-  const handleGradStart = isPos ? '#f87171' : '#34d399';
-  const handleGradMid = isPos ? '#dc2626' : '#059669';
-  const handleGradDark = isPos ? '#991b1b' : '#065f46';
+
+  // Probe'un ekrandaki konumuna göre yönü belirlenir:
+  // Sol yarıda → gövde ve kablo sol-üste uzanır, iğne ucu SAĞ-ALTA bakar
+  // Sağ yarıda → gövde ve kablo sağ-üste uzanır, iğne ucu SOL-ALTA bakar
+  const isOnLeftSide = screenX < canvasWidth / 2;
+
+  const colorHex       = isPos ? (config.positive_color || '#dc2626') : (config.negative_color || '#000000');
+  const handleGradStart = isPos ? '#f87171' : '#4a4a4a';
+  const handleGradMid  = isPos ? '#dc2626' : '#1a1a1a';
+  const handleGradDark = isPos ? '#991b1b' : '#000000';
 
   const tiltDeg = config.probe_angle || 40;
-  // Positive (right): tilts up-right (-tiltDeg). Negative (left): tilts up-left (-(180 - tiltDeg)).
-  const angleDeg = isPos ? -tiltDeg : -(180 - tiltDeg);
+  // Sol taraf: angleDeg = -140° (gövde sol-üste, tip sağ-alta). Sağ taraf: angleDeg = -40° (gövde sağ-üste, tip sol-alta).
+  const angleDeg = isOnLeftSide ? -(180 - tiltDeg) : -tiltDeg;
   const angleRad = (angleDeg * Math.PI) / 180;
 
   ctx.save();
+  ctx.globalAlpha = opacity;
   // Origin centered exactly at metal needle tip (screenX, screenY)
   ctx.translate(screenX, screenY);
   ctx.rotate(angleRad);
@@ -88,14 +96,15 @@ export function drawProbeAssembly(ctx, screenX, screenY, role = 'positive', conf
 
   ctx.restore();
 
-  // 5. Cable Physics (Connected to TOP RIGHT / TOP LEFT CORNER)
+  // 5. Cable Physics — kablo probe'un ekrandaki tarafına göre köşeye gider
   const cosA = Math.cos(angleRad);
   const sinA = Math.sin(angleRad);
 
   const tailX = screenX + 190 * cosA;
   const tailY = screenY + 190 * sinA;
 
-  const destX = isPos ? ctx.canvas.width - 25 : 25;
+  // Sol tarafta ise kablo sol-üst köşeye (25, 25), sağ tarafta ise sağ-üst köşeye (canvasWidth-25, 25)
+  const destX = isOnLeftSide ? 25 : ctx.canvas.width - 25;
   const destY = 25;
 
   ctx.strokeStyle = colorHex;
@@ -106,7 +115,7 @@ export function drawProbeAssembly(ctx, screenX, screenY, role = 'positive', conf
   ctx.bezierCurveTo(
     tailX + cosA * 60,
     tailY + sinA * 60 - 50,
-    destX + (isPos ? -60 : 60),
+    destX + (isOnLeftSide ? 60 : -60),
     destY + 100,
     destX,
     destY
@@ -121,7 +130,7 @@ export function drawProbeAssembly(ctx, screenX, screenY, role = 'positive', conf
   ctx.bezierCurveTo(
     tailX + cosA * 60,
     tailY + sinA * 60 - 50,
-    destX + (isPos ? -60 : 60),
+    destX + (isOnLeftSide ? 60 : -60),
     destY + 100,
     destX,
     destY

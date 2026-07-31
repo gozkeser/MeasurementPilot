@@ -7,6 +7,11 @@ from backend.models.measurement import MeasurementSession, MeasurementRecord
 from backend.services.project_service import project_service, ProjectLoadError
 from backend.services.tcd_service import tcd_service
 
+PREFIX_MULTIPLIERS = {
+    'p': 1e-12, 'n': 1e-9, 'μ': 1e-6, 'm': 1e-3, '': 1.0,
+    'k': 1e3, 'K': 1e3, 'M': 1e6, 'G': 1e9
+}
+
 class MeasurementService:
     def _get_session_path(self, session_id: str) -> str:
         return str(SESSIONS_DIR / f"TM_{session_id}.json")
@@ -61,22 +66,27 @@ class MeasurementService:
         tc = next((c for c in tcd.test_cases if c.id == test_case_id), None)
         tc_name = tc.name if tc else test_case_id
 
+        eff_prefix = measured_prefix if measured_prefix != "" else (tc.prefix if tc else "")
+        eff_unit = measured_unit if measured_unit != "" else (tc.unit if tc else "")
+
         in_range = None
         if tc:
-            # Simple conversion if prefix matches
-            in_range = (tc.expected_min <= measured_value <= tc.expected_max)
+            multiplier = PREFIX_MULTIPLIERS.get(eff_prefix, 1.0)
+            base_measured_value = measured_value * multiplier
+            in_range = (tc.expected_min <= base_measured_value <= tc.expected_max)
 
         record = MeasurementRecord(
             test_case_id=test_case_id,
             test_case_name=tc_name,
             status="measured",
             measured_value=measured_value,
-            measured_prefix=measured_prefix,
-            measured_unit=measured_unit,
+            measured_prefix=eff_prefix,
+            measured_unit=eff_unit,
             in_range=in_range,
             notes=notes or "",
             timestamp=datetime.now(timezone.utc).isoformat()
         )
+
 
         # Update existing record or append
         idx = next((i for i, r in enumerate(session.records) if r.test_case_id == test_case_id), None)

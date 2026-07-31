@@ -23,10 +23,17 @@ class OverlayConfig(BaseModel):
 
 class ProbeConfig(BaseModel):
     positive_color: str = "#ff4757"
-    negative_color: str = "#2ed573"
+    negative_color: str = "#000000"
     body_length_px: int = 80
     tip_length_px: int = 20
     cable_sag_factor: float = 0.35
+    probe_angle: int = 40
+
+class HighlightConfig(BaseModel):
+    animation: str = "reticle"   # "reticle" | "ping" | "crosshair"
+    color: str = "#00d4ff"
+    size: int = 32
+    line_width: int = 2
 
 class AppSettings(BaseModel):
     theme: str = "dark"  # "dark", "light", "corporate"
@@ -40,3 +47,4 @@ class AppSettings(BaseModel):
         "COMPONENT": OverlayConfig(shape="badge", color="#a55eea")
     }
     probe: ProbeConfig = ProbeConfig()
+    highlight: HighlightConfig = HighlightConfig()

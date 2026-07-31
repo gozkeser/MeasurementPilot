@@ -65,12 +65,24 @@ class App {
     subscribe((state) => {
       this.engine.unregisterOverlay('selected-element');
       const sel = state.selectedElement;
-      if (sel) {
+      if (sel && state.mode === 'highlight') {
         api.transform.mmToPx(state.activeLayer, sel.x, sel.y).then(px => {
           this.engine.registerOverlay('selected-element', (ctx, engine, timestamp) => {
             const screen = engine.canvasToScreen(px.x_px, px.y_px);
-            drawReticle(ctx, screen.sx, screen.sy, { color: '#00d4ff', size: 32 }, timestamp);
-            drawBadgeMarker(ctx, screen.sx, screen.sy, sel.label, { color: '#00d4ff' });
+            const hl    = state.settings.highlight || {};
+            const color = hl.color || '#00d4ff';
+            const size  = hl.size  || 32;
+            const line_width = hl.line_width || 2;
+            const anim  = hl.animation || 'reticle';
+
+            if (anim === 'reticle') {
+              drawReticle(ctx, screen.sx, screen.sy, { color, size, line_width }, timestamp);
+            } else if (anim === 'ping') {
+              drawPing(ctx, screen.sx, screen.sy, { color, size, line_width }, timestamp);
+            } else if (anim === 'crosshair') {
+              drawCrosshair(ctx, screen.sx, screen.sy, { color, size, line_width });
+            }
+            drawBadgeMarker(ctx, screen.sx, screen.sy, sel.label, { color });
           });
         }).catch(() => {});
       }
@@ -119,7 +131,7 @@ class App {
     document.addEventListener('fullscreenchange', () => {
       setTimeout(() => {
         if (this.engine) {
-          this.engine.resizeCanvas();
+          this.engine.resize();
           this.engine.resetView();
         }
       }, 150);
@@ -133,6 +145,14 @@ class App {
         tab.classList.add('active');
 
         const mode = tab.getAttribute('data-mode');
+        window._appMode = mode;
+
+        // Highlight tabından çıkılınca animasyonu sonlandır
+        if (mode !== 'highlight') {
+          this.engine.unregisterOverlay('selected-element');
+          setState({ selectedElement: null });
+        }
+
         setState({ mode });
       });
     });
@@ -185,8 +205,12 @@ class App {
     let flyDurationVal = settings.flyto?.duration_ms || 800;
     let flyZoomVal = settings.flyto?.target_zoom || 2.5;
     let posColorVal = settings.probe?.positive_color || '#dc2626';
-    let negColorVal = settings.probe?.negative_color || '#10b981';
+    let negColorVal = settings.probe?.negative_color || '#000000';
     let probeAngleVal = settings.probe?.probe_angle || 40;
+    let hlAnimVal   = settings.highlight?.animation || 'reticle';
+    let hlColorVal  = settings.highlight?.color || '#00d4ff';
+    let hlSizeVal   = settings.highlight?.size || 32;
+    let hlLineWVal  = settings.highlight?.line_width || 2;
 
     form.appendChild(Dropdown({
       label: 'UI Theme',
@@ -246,6 +270,50 @@ class App {
       onChange: (v) => probeAngleVal = parseInt(v) || 40
     }));
 
+    // ---- Highlight Animation Settings ----
+    const hlDivider = document.createElement('div');
+    hlDivider.style.cssText = 'border-top: 1px solid var(--border-color); margin: 16px 0 12px; padding-top: 12px; font-size: 12px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px;';
+    hlDivider.textContent = 'Highlight Animation';
+    form.appendChild(hlDivider);
+
+    form.appendChild(Dropdown({
+      label: 'Animation Type',
+      options: [
+        { value: 'reticle',   label: 'Reticle — Rotating Ring' },
+        { value: 'ping',      label: 'Ping — Expanding Pulse' },
+        { value: 'crosshair', label: 'Crosshair — Fixed Target' }
+      ],
+      selected: hlAnimVal,
+      onSelect: (v) => hlAnimVal = v
+    }));
+
+    const hlRow = document.createElement('div');
+    hlRow.style.display = 'grid';
+    hlRow.style.gridTemplateColumns = '1fr 1fr';
+    hlRow.style.gap = '10px';
+
+    hlRow.appendChild(TextInput({
+      label: 'Color',
+      value: hlColorVal,
+      onChange: (v) => hlColorVal = v
+    }));
+
+    hlRow.appendChild(TextInput({
+      label: 'Size (px)',
+      value: hlSizeVal,
+      type: 'number',
+      onChange: (v) => hlSizeVal = parseInt(v) || 32
+    }));
+
+    form.appendChild(hlRow);
+
+    form.appendChild(TextInput({
+      label: 'Line Width (px)',
+      value: hlLineWVal,
+      type: 'number',
+      onChange: (v) => hlLineWVal = parseInt(v) || 2
+    }));
+
     showModal({
       title: '⚙️ Application & Canvas Settings',
       bodyEl: form,
@@ -258,7 +326,8 @@ class App {
             const patch = {
               theme: themeVal,
               flyto: { duration_ms: flyDurationVal, target_zoom: flyZoomVal },
-              probe: { positive_color: posColorVal, negative_color: negColorVal, probe_angle: probeAngleVal }
+              probe: { positive_color: posColorVal, negative_color: negColorVal, probe_angle: probeAngleVal },
+              highlight: { animation: hlAnimVal, color: hlColorVal, size: hlSizeVal, line_width: hlLineWVal }
             };
 
             try {
@@ -274,6 +343,7 @@ class App {
       ]
     });
   }
+
 
   async initSettings() {
     try {

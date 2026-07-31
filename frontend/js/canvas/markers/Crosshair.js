@@ -1,7 +1,7 @@
-export function drawCrosshair(ctx, screenX, screenY, { color = '#00d4ff', size = 24, gap = 6, thickness = 2 } = {}) {
+export function drawCrosshair(ctx, screenX, screenY, { color = '#00d4ff', size = 24, gap = 6, thickness = 2, line_width = 2, lineWidth = 2 } = {}) {
   ctx.save();
   ctx.strokeStyle = color;
-  ctx.lineWidth = thickness;
+  ctx.lineWidth = line_width || lineWidth || thickness || 2;
   ctx.shadowColor = color;
   ctx.shadowBlur = 8;
 
