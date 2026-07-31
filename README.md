@@ -1,4 +1,4 @@
-# MeasurementPilot — PCB Inspection & Measurement Flight Record System
+# MeasurementPilot — PCB Inspection & Measurement System
 
 > **Version**: 1.0.0  
 > **Backend**: Python 3.11+ / FastAPI / Uvicorn  
@@ -8,7 +8,7 @@
 
 ## 🌟 Overview
 
-MeasurementPilot is an interactive offline-first PCB inspection, test point definition, and measurement flight record system. It bridges design data (Altium PPL components, TPR test points) with bench execution, providing animated dual-probe visualization on HTML5 Canvas and automated HTML report generation.
+MeasurementPilot is an interactive offline-first PCB inspection, test point definition, and measurement guidance system. It bridges design data (Altium PPL components, TPR test points) with bench execution, providing animated dual-probe visualization on HTML5 Canvas and automated HTML report generation.
 
 ---
 
@@ -20,7 +20,7 @@ MeasurementPilot is an interactive offline-first PCB inspection, test point defi
 - 🛠️ **Custom Test Points (CTP)**: Click anywhere on the PCB to define and save CTPs directly into the project ZIP.
 - 📋 **Test Case Definition (TCD)**: Organize measurement sequences, expected ranges, unit auto-suggestions, and drag & drop reordering.
 - 🚀 **Measurement Execution**: Record measurements with automatic pass/fail validation against expected bounds, skip steps, and track progress.
-- 📄 **HTML Flight Records**: Generate standalone offline Jinja2 HTML flight report records.
+- 📄 **HTML Reports**: Generate standalone offline Jinja2 HTML reports.
 - 🎨 **Multi-Theme UI**: Dark, Light, and Corporate glassmorphism themes with internationalization (English & Turkish).
 
 ---
